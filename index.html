@@ -142,7 +142,7 @@
     .num-meta { margin-top: 5px; color: var(--muted); font: 10px/1 ui-monospace, monospace; }
     @keyframes enter { from { opacity: 0; transform: translateY(7px) scale(.97); } }
 
-    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 18px 0 0; }
+    .metrics { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 18px 0 0; }
     .metric { padding: 11px; border: 1px solid var(--line); border-radius: 12px; background: rgba(0,0,0,.18); }
     .metric b { display: block; font: 700 15px/1.2 ui-monospace, monospace; }
     .metric span { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
@@ -228,14 +228,12 @@
             <div class="mode-kicker">Selection sort, but vibes</div>
             <h3>串行选最大</h3>
             <p>每轮让 Jev 从剩余候选中选出最大值，然后删掉它，直到序列耗尽。</p>
-            <small>需要 n 次 API 调用 · 每一步依赖上一步</small>
             <button class="run" id="runSerial" type="button">开始串行排序</button>
           </article>
           <article class="mode">
             <div class="mode-kicker">One request, maximum audacity</div>
             <h3>并行猜第 k 大</h3>
             <p>在一次请求里同时询问第 1、2…n 大。每道题互相看不到答案。</p>
-            <small>仅 1 次 API 调用 · 可能重复、打架、循环</small>
             <button class="run" id="runParallel" type="button">开始并行排序</button>
           </article>
         </div>
@@ -460,6 +458,7 @@
           <div class="metric"><b>${formatMs(run.stats.totalMs)}</b><span>network time</span></div>
           <div class="metric"><b>${run.stats.inputTokens}</b><span>input tokens</span></div>
           <div class="metric"><b>${run.stats.outputTokens}</b><span>output tokens</span></div>
+          <div class="metric"><b>${formatCost(run.stats.inputTokens)}</b><span title="按 Jev 当前 $0.042 / 百万输入 token 估算；输出 token 免费">estimated cost</span></div>
         </div>
         ${!partial && (evaluation.duplicates.size || evaluation.missing.length) ? `<div class="error-box" style="margin-top:15px"><b>并行宇宙发生冲突</b><p>${evaluation.duplicates.size ? `重复选择：${[...evaluation.duplicates].join(', ')}。` : ''}${evaluation.missing.length ? `\n漏掉候选：${evaluation.missing.map(x => `${x.value} (${x.id})`).join(', ')}。` : ''}</p></div>` : ''}
         <div class="trace">${traceHtml}</div>
@@ -476,6 +475,7 @@
 
     function redactPayload(payload) { return payload ? structuredClone(payload) : null; }
     function formatMs(ms) { return ms < 1000 ? `${Math.round(ms)}ms` : `${(ms / 1000).toFixed(2)}s`; }
+    function formatCost(inputTokens) { return `${((inputTokens || 0) * 0.042 / 1_000_000).toFixed(6)}`; }
     function escapeHtml(value) { return String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'})[c]); }
     function setStatus(kind, text) { els.status.dataset.kind = kind; els.statusText.textContent = text; }
 
