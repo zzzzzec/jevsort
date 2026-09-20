@@ -422,11 +422,67 @@
       return { exact, duplicates, missing, perfect: exact === truth.length && duplicates.size === 0 };
     }
 
-    function renderProgress(ordered, truth, trace, stats) {
-      renderResult({ ordered, trace, stats }, truth, true);
+    function renderProgress(ordered, truth, trace, stats, partial = true) {
+      const needsScaffold = els.result.dataset.liveMode !== 'serial' || !els.result.querySelector('[data-live-numbers]');
+      if (needsScaffold) {
+        els.result.dataset.liveMode = 'serial';
+        els.result.innerHTML = `
+          <div class="result-head">
+            <div class="result-title" data-live-title></div>
+            <div class="score" data-live-score></div>
+          </div>
+          <div class="numbers" data-live-numbers></div>
+          <div class="metrics">
+            <div class="metric"><b data-live-calls>0</b><span>API calls</span></div>
+            <div class="metric"><b data-live-time>0ms</b><span>network time</span></div>
+            <div class="metric"><b data-live-input>0</b><span>input tokens</span></div>
+            <div class="metric"><b data-live-output>0</b><span>output tokens</span></div>
+            <div class="metric"><b data-live-cost>$0.000000</b><span title="按 Jev 当前 $0.042 / 百万输入 token 估算；输出 token 免费">estimated cost</span></div>
+          </div>
+          <div class="trace" data-live-trace></div>
+          <details>
+            <summary>查看最后一次请求与原始响应</summary>
+            <pre data-live-raw></pre>
+          </details>`;
+      }
+
+      const evaluation = evaluate(ordered, truth);
+      const accuracy = truth.length ? Math.round(evaluation.exact / truth.length * 100) : 0;
+      const numbers = els.result.querySelector('[data-live-numbers]');
+      while (numbers.children.length < ordered.length) {
+        const i = numbers.children.length;
+        const item = ordered[i];
+        const confidence = trace[i]?.confidence;
+        const node = document.createElement('div');
+        node.className = 'num';
+        node.innerHTML = `<div class="num-value">${item.value}</div><div class="num-meta">#${i + 1} · ${confidence == null ? '—' : `${Math.round(confidence * 100)}%`}</div>`;
+        numbers.appendChild(node);
+      }
+      if (!partial) {
+        [...numbers.children].forEach((node, i) => node.classList.toggle('bad', ordered[i]?.id !== truth[i]?.id));
+      }
+
+      const traceBox = els.result.querySelector('[data-live-trace]');
+      while (traceBox.children.length < trace.length) {
+        const t = trace[traceBox.children.length];
+        const node = document.createElement('div');
+        node.className = 'trace-line';
+        node.innerHTML = `<span class="trace-rank">#${t.rank}</span><span>${t.item.value} <span style="color:#686775">(${t.item.id})</span>${t.local ? ' · 最后一项直接归位' : ''}</span><span class="trace-confidence">${Math.round((t.confidence ?? 0) * 100)}%</span>`;
+        traceBox.appendChild(node);
+      }
+
+      els.result.querySelector('[data-live-title]').textContent = `${stats.mode}${partial ? ' · 运行中' : ''}`;
+      els.result.querySelector('[data-live-score]').textContent = partial ? `${ordered.length}/${truth.length}` : evaluation.perfect ? 'PERFECT SORT' : `${accuracy}% POSITION ACC.`;
+      els.result.querySelector('[data-live-calls]').textContent = stats.calls;
+      els.result.querySelector('[data-live-time]').textContent = formatMs(stats.totalMs);
+      els.result.querySelector('[data-live-input]').textContent = stats.inputTokens;
+      els.result.querySelector('[data-live-output]').textContent = stats.outputTokens;
+      els.result.querySelector('[data-live-cost]').textContent = formatCost(stats.inputTokens);
+      els.result.querySelector('[data-live-raw]').textContent = JSON.stringify({ request: redactPayload(app.lastPayload), response: app.lastRaw }, null, 2);
     }
 
     function renderResult(run, truth, partial = false) {
+      delete els.result.dataset.liveMode;
       const evaluation = evaluate(run.ordered, truth);
       const duplicateIds = evaluation.duplicates;
       const numbers = run.ordered.map((item, i) => {
@@ -469,6 +525,7 @@
     }
 
     function renderError(error) {
+      delete els.result.dataset.liveMode;
       els.result.innerHTML = `<div class="error-box"><b>实验没有完成</b><p>${escapeHtml(error.message || String(error))}</p></div>
         <details open><summary>最后一次请求（不含 API Key）</summary><pre>${escapeHtml(JSON.stringify(redactPayload(app.lastPayload), null, 2))}</pre></details>`;
     }
@@ -492,9 +549,11 @@
       try {
         const items = parseNumbers();
         const truth = exactOrder(items);
+        delete els.result.dataset.liveMode;
         setRunning(true);
         const result = mode === 'serial' ? await serialSort(items) : await parallelSort(items);
-        renderResult(result, truth);
+        if (mode === 'serial') renderProgress(result.ordered, truth, result.trace, result.stats, false);
+        else renderResult(result, truth);
         const e = evaluate(result.ordered, truth);
         setStatus(e.perfect ? 'ok' : 'error', e.perfect ? `${result.stats.mode} 完成：Jev 居然真的排对了。` : `${result.stats.mode} 完成：排序出现冲突，这才是我们来看的。`);
       } catch (error) {
