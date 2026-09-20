@@ -184,14 +184,14 @@
         <h1><span class="gradient">JevSort</span></h1>
         <p class="tagline"><code>O(n log n)</code> comparisons, <code>O(log n)</code> vibes.</p>
       </div>
-      <div class="badge"><span class="dot"></span>jev-latest · max 20 integers</div>
+      <div class="badge"><span class="dot"></span>jev-latest · probabilistic sorting</div>
     </header>
 
     <div class="grid">
       <section class="card card-pad">
         <div class="section-title">
           <h2>实验参数</h2>
-          <span class="counter" id="numberCounter">0 / 20</span>
+          <span class="counter" id="numberCounter">已投入 0 个整数</span>
         </div>
 
         <label for="apiKey">TypeSafe API Key</label>
@@ -277,12 +277,12 @@
       const raw = els.numbers.value.trim();
       if (!raw) throw new Error('先放几个整数进来，排序算法不能对空气施法。');
       const parts = raw.split(/[\s,，;；]+/).filter(Boolean);
-      if (parts.length > 20) throw new Error(`最多允许 20 个整数，现在有 ${parts.length} 个。`);
+      if (parts.length > 20) throw new Error('这次实验的野心有点太大了。更多的范围和数量 coming soon。');
       const values = parts.map((token, index) => {
         if (!/^[+-]?\d+$/.test(token)) throw new Error(`第 ${index + 1} 项「${token}」不是整数。`);
         const value = Number(token);
-        if (!Number.isSafeInteger(value)) throw new Error(`第 ${index + 1} 项超出了 JavaScript 安全整数范围。`);
-        if (value < -1_000_000 || value > 1_000_000) throw new Error(`第 ${index + 1} 项 ${value} 不在 -1,000,000 到 1,000,000 内。`);
+        if (!Number.isSafeInteger(value)) throw new Error('这个数字已经跑到实验场外面去了。更多的范围和数量 coming soon。');
+        if (value < -1_000_000 || value > 1_000_000) throw new Error('这个数字已经跑到实验场外面去了。更多的范围和数量 coming soon。');
         return value;
       });
       return values.map((value, index) => ({ id: `item_${index}`, value, originalIndex: index }));
@@ -508,7 +508,7 @@
 
     function refreshCounter() {
       const count = els.numbers.value.trim() ? els.numbers.value.trim().split(/[\s,，;；]+/).filter(Boolean).length : 0;
-      els.counter.textContent = `${count} / 20`;
+      els.counter.textContent = `已投入 ${count} 个整数`;
       els.counter.style.color = count > 20 ? 'var(--pink)' : '';
     }
 
