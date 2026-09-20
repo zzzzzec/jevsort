@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>JevSort — O(log n) vibes</title>
+  <style>
+    :root {
+      --bg: #08090d;
+      --panel: rgba(18, 20, 29, .78);
+      --panel-2: rgba(27, 30, 42, .74);
+      --line: rgba(255,255,255,.10);
+      --line-strong: rgba(255,255,255,.18);
+      --ink: #f6f3eb;
+      --muted: #9b9baa;
+      --violet: #a78bfa;
+      --cyan: #67e8f9;
+      --lime: #bef264;
+      --pink: #fb7185;
+      --amber: #fbbf24;
+      --shadow: 0 24px 90px rgba(0,0,0,.42);
+    }
+
+    * { box-sizing: border-box; }
+    html { min-height: 100%; background: var(--bg); }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font: 15px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 9% 0%, rgba(124, 58, 237, .22), transparent 34rem),
+        radial-gradient(circle at 100% 20%, rgba(6, 182, 212, .14), transparent 33rem),
+        linear-gradient(180deg, #0b0c12 0%, #07080c 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .22;
+      background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+      background-size: 32px 32px;
+      mask-image: linear-gradient(to bottom, black, transparent 80%);
+    }
+
+    button, input, textarea { font: inherit; }
+    button { color: inherit; }
+
+    .shell { width: min(1180px, calc(100% - 30px)); margin: 0 auto; padding: 46px 0 70px; }
+    header { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 28px; }
+    .eyebrow { color: var(--cyan); font: 700 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .15em; text-transform: uppercase; }
+    h1 { margin: 10px 0 5px; font-size: clamp(42px, 7vw, 78px); line-height: .96; letter-spacing: -.065em; }
+    .gradient { color: transparent; background: linear-gradient(110deg, #fff 8%, var(--violet) 50%, var(--cyan)); background-clip: text; -webkit-background-clip: text; }
+    .tagline { margin: 13px 0 0; color: var(--muted); font-size: 16px; }
+    .tagline code { color: var(--lime); }
+    .badge { flex: none; border: 1px solid var(--line); border-radius: 999px; padding: 9px 13px; color: var(--muted); background: rgba(255,255,255,.035); }
+    .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 15px var(--lime); margin-right: 8px; }
+
+    .grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(340px, .95fr); gap: 18px; }
+    .card { border: 1px solid var(--line); border-radius: 22px; background: var(--panel); box-shadow: var(--shadow); backdrop-filter: blur(18px); overflow: hidden; }
+    .card-pad { padding: 23px; }
+    .section-title { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 16px; }
+    h2 { margin: 0; font-size: 17px; letter-spacing: -.02em; }
+    .counter { color: var(--muted); font: 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+    label { display: block; margin: 0 0 7px; color: #cac8d1; font-size: 13px; }
+    .input-wrap { position: relative; }
+    input, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      outline: none;
+      color: var(--ink);
+      background: rgba(3, 4, 8, .62);
+      transition: border-color .18s, box-shadow .18s, transform .18s;
+    }
+    input { height: 47px; padding: 0 46px 0 14px; }
+    textarea { min-height: 116px; padding: 13px 14px; resize: vertical; font: 14px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    input:focus, textarea:focus { border-color: rgba(167,139,250,.75); box-shadow: 0 0 0 4px rgba(139,92,246,.12); }
+    .icon-btn { position: absolute; right: 7px; top: 7px; width: 33px; height: 33px; border: 0; border-radius: 9px; background: transparent; cursor: pointer; color: var(--muted); }
+    .icon-btn:hover { background: rgba(255,255,255,.07); color: white; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; margin-top: 14px; }
+    .hint { margin-top: 8px; color: var(--muted); font-size: 12px; }
+    .hint strong { color: var(--amber); font-weight: 650; }
+
+    .quick-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 11px; }
+    .chip { border: 1px solid var(--line); background: rgba(255,255,255,.035); border-radius: 999px; padding: 6px 10px; font-size: 12px; cursor: pointer; color: #c7c4d0; }
+    .chip:hover { border-color: var(--line-strong); background: rgba(255,255,255,.07); color: white; }
+
+    .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+    .mode {
+      position: relative;
+      min-height: 176px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(155deg, rgba(255,255,255,.055), rgba(255,255,255,.015));
+    }
+    .mode-kicker { color: var(--cyan); font: 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace; text-transform: uppercase; letter-spacing: .12em; }
+    .mode h3 { margin: 10px 0 7px; font-size: 18px; }
+    .mode p { margin: 0; color: var(--muted); font-size: 13px; }
+    .mode small { display: block; margin-top: 9px; color: #747481; }
+
+    .run {
+      width: 100%; height: 44px; margin-top: 15px; border: 0; border-radius: 12px; cursor: pointer;
+      font-weight: 760; letter-spacing: -.01em; color: #090a0e;
+      background: linear-gradient(100deg, var(--violet), #d8b4fe);
+      box-shadow: 0 8px 28px rgba(139,92,246,.22);
+      transition: transform .15s, filter .15s;
+    }
+    .mode:nth-child(2) .run { background: linear-gradient(100deg, var(--cyan), #a5f3fc); box-shadow: 0 8px 28px rgba(34,211,238,.16); }
+    .run:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.08); }
+    .run:disabled { opacity: .45; cursor: wait; }
+
+    .status { min-height: 52px; display: flex; align-items: center; gap: 11px; padding: 0 15px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.025); }
+    .status-light { width: 9px; height: 9px; border-radius: 50%; flex: none; background: #656574; }
+    .status[data-kind="busy"] .status-light { background: var(--amber); box-shadow: 0 0 16px var(--amber); animation: pulse 1s infinite; }
+    .status[data-kind="ok"] .status-light { background: var(--lime); box-shadow: 0 0 16px var(--lime); }
+    .status[data-kind="error"] .status-light { background: var(--pink); box-shadow: 0 0 16px var(--pink); }
+    .status-text { color: #d5d2db; font-size: 13px; }
+    @keyframes pulse { 50% { opacity: .35; transform: scale(.76); } }
+
+    .result { padding: 21px; min-height: 413px; }
+    .empty { min-height: 365px; display: grid; place-content: center; text-align: center; color: var(--muted); }
+    .empty-mark { width: 74px; height: 74px; margin: 0 auto 16px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 22px; font: 700 25px/1 ui-monospace, monospace; color: var(--violet); transform: rotate(-3deg); background: rgba(139,92,246,.075); }
+    .empty p { margin: 0; }
+
+    .result-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 16px; }
+    .result-title { font-size: 13px; color: var(--muted); }
+    .score { font: 700 13px/1 ui-monospace, monospace; color: var(--lime); }
+    .numbers { display: flex; flex-wrap: wrap; gap: 9px; }
+    .num {
+      min-width: 58px; padding: 10px 11px 9px; border-radius: 13px; border: 1px solid var(--line);
+      background: var(--panel-2); text-align: center; animation: enter .35s both;
+    }
+    .num.bad { border-color: rgba(251,113,133,.4); background: rgba(251,113,133,.08); }
+    .num.duplicate { box-shadow: inset 0 0 0 1px var(--amber); }
+    .num-value { font: 760 17px/1.15 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .num-meta { margin-top: 5px; color: var(--muted); font: 10px/1 ui-monospace, monospace; }
+    @keyframes enter { from { opacity: 0; transform: translateY(7px) scale(.97); } }
+
+    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 18px 0 0; }
+    .metric { padding: 11px; border: 1px solid var(--line); border-radius: 12px; background: rgba(0,0,0,.18); }
+    .metric b { display: block; font: 700 15px/1.2 ui-monospace, monospace; }
+    .metric span { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
+
+    .trace { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 15px; }
+    .trace-line { display: grid; grid-template-columns: 58px 1fr auto; gap: 10px; align-items: center; padding: 7px 0; color: #cbc9d3; font-size: 12px; }
+    .trace-line + .trace-line { border-top: 1px dashed rgba(255,255,255,.06); }
+    .trace-rank { color: var(--cyan); font: 11px/1 ui-monospace, monospace; }
+    .trace-confidence { color: var(--muted); font: 11px/1 ui-monospace, monospace; }
+
+    .error-box { border: 1px solid rgba(251,113,133,.28); background: rgba(251,113,133,.07); border-radius: 15px; padding: 15px; }
+    .error-box b { color: #fda4af; }
+    .error-box p { color: #c9a7ad; margin: 7px 0 0; font-size: 13px; white-space: pre-wrap; word-break: break-word; }
+
+    details { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 15px; }
+    summary { cursor: pointer; color: var(--muted); font-size: 12px; }
+    pre { max-height: 260px; overflow: auto; margin: 12px 0 0; padding: 13px; border-radius: 12px; background: #050609; border: 1px solid var(--line); color: #c8c5d0; font: 11px/1.55 ui-monospace, monospace; white-space: pre-wrap; word-break: break-word; }
+    footer { display: flex; justify-content: space-between; gap: 20px; margin-top: 18px; color: #666674; font-size: 11px; }
+    footer a { color: #9290a0; text-decoration: none; }
+
+    @media (max-width: 850px) {
+      header { align-items: flex-start; flex-direction: column; }
+      .grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 570px) {
+      .shell { width: min(100% - 20px, 1180px); padding-top: 27px; }
+      .card-pad, .result { padding: 17px; }
+      .modes, .row { grid-template-columns: 1fr; }
+      .metrics { grid-template-columns: 1fr 1fr; }
+      .badge { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div>
+        <div class="eyebrow">Experimental sorting laboratory</div>
+        <h1><span class="gradient">JevSort</span></h1>
+        <p class="tagline"><code>O(n log n)</code> comparisons, <code>O(log n)</code> vibes.</p>
+      </div>
+      <div class="badge"><span class="dot"></span>jev-latest · max 20 integers</div>
+    </header>
+
+    <div class="grid">
+      <section class="card card-pad">
+        <div class="section-title">
+          <h2>实验参数</h2>
+          <span class="counter" id="numberCounter">0 / 20</span>
+        </div>
+
+        <label for="apiKey">TypeSafe API Key</label>
+        <div class="input-wrap">
+          <input id="apiKey" type="password" autocomplete="off" spellcheck="false" placeholder="apikey_…（仅保留在当前页面内存）" />
+          <button class="icon-btn" id="toggleKey" type="button" aria-label="显示或隐藏 API Key">◉</button>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="endpoint">API Endpoint</label>
+            <input id="endpoint" value="/api/jev" spellcheck="false" style="padding-right:14px" />
+          </div>
+          <div>
+            <label for="timeout">单次超时（秒）</label>
+            <input id="timeout" type="number" min="5" max="120" value="30" style="padding-right:14px" />
+          </div>
+        </div>
+        <p class="hint"><strong>安全提示：</strong>Key 不会写进文件、LocalStorage 或日志；它仅随本次请求经过同源 Pages Function 转发给 TypeSafe。</p>
+
+        <div style="margin-top:18px">
+          <label for="numbers">整数序列</label>
+          <textarea id="numbers" placeholder="用空格、逗号或换行分隔，例如：&#10;42, -7, 100, 0, 13">42, -7, 100, 0, 13, 13, -999, 888</textarea>
+          <div class="quick-row">
+            <button class="chip" type="button" data-sample="random">随机 12 个</button>
+            <button class="chip" type="button" data-sample="reverse">逆序陷阱</button>
+            <button class="chip" type="button" data-sample="duplicates">重复值地狱</button>
+            <button class="chip" type="button" data-sample="edge">边界值</button>
+          </div>
+        </div>
+
+        <div class="modes">
+          <article class="mode">
+            <div class="mode-kicker">Selection sort, but vibes</div>
+            <h3>串行选最大</h3>
+            <p>每轮让 Jev 从剩余候选中选出最大值，然后删掉它，直到序列耗尽。</p>
+            <small>需要 n 次 API 调用 · 每一步依赖上一步</small>
+            <button class="run" id="runSerial" type="button">开始串行排序</button>
+          </article>
+          <article class="mode">
+            <div class="mode-kicker">One request, maximum audacity</div>
+            <h3>并行猜第 k 大</h3>
+            <p>在一次请求里同时询问第 1、2…n 大。每道题互相看不到答案。</p>
+            <small>仅 1 次 API 调用 · 可能重复、打架、循环</small>
+            <button class="run" id="runParallel" type="button">开始并行排序</button>
+          </article>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="status" id="status" data-kind="idle">
+          <span class="status-light"></span>
+          <span class="status-text" id="statusText">等待一次足以载入排序史册的实验</span>
+        </div>
+        <div class="result" id="result">
+          <div class="empty">
+            <div class="empty-mark">≻?</div>
+            <p>Jev 的排序结果会出现在这里</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer>
+      <span>JevSort is an intentionally unreasonable benchmark.</span>
+      <a href="https://docs.typesafe.ai/api" target="_blank" rel="noreferrer">TypeSafe API docs ↗</a>
+    </footer>
+  </main>
+
+  <script>
+    'use strict';
+
+    const $ = (id) => document.getElementById(id);
+    const els = {
+      apiKey: $('apiKey'), endpoint: $('endpoint'), timeout: $('timeout'), numbers: $('numbers'),
+      counter: $('numberCounter'), status: $('status'), statusText: $('statusText'), result: $('result'),
+      runSerial: $('runSerial'), runParallel: $('runParallel'), toggleKey: $('toggleKey')
+    };
+
+    const app = { running: false, lastPayload: null, lastRaw: null };
+
+    function parseNumbers() {
+      const raw = els.numbers.value.trim();
+      if (!raw) throw new Error('先放几个整数进来，排序算法不能对空气施法。');
+      const parts = raw.split(/[\s,，;；]+/).filter(Boolean);
+      if (parts.length > 20) throw new Error(`最多允许 20 个整数，现在有 ${parts.length} 个。`);
+      const values = parts.map((token, index) => {
+        if (!/^[+-]?\d+$/.test(token)) throw new Error(`第 ${index + 1} 项「${token}」不是整数。`);
+        const value = Number(token);
+        if (!Number.isSafeInteger(value)) throw new Error(`第 ${index + 1} 项超出了 JavaScript 安全整数范围。`);
+        if (value < -1_000_000 || value > 1_000_000) throw new Error(`第 ${index + 1} 项 ${value} 不在 -1,000,000 到 1,000,000 内。`);
+        return value;
+      });
+      return values.map((value, index) => ({ id: `item_${index}`, value, originalIndex: index }));
+    }
+
+    function exactOrder(items) {
+      return [...items].sort((a, b) => (b.value - a.value) || (a.originalIndex - b.originalIndex));
+    }
+
+    function ordinal(n) {
+      if (n % 100 >= 11 && n % 100 <= 13) return `${n}th`;
+      return `${n}${({1:'st',2:'nd',3:'rd'})[n % 10] || 'th'}`;
+    }
+
+    function criteriaFor(items) {
+      return Object.fromEntries(items.map(item => [
+        item.id,
+        `Candidate ${item.id} contains the integer ${item.value}. Its original input position is ${item.originalIndex + 1}.`
+      ]));
+    }
+
+    function commonState(items) {
+      return {
+        task: 'Sort integers from numerically largest to smallest.',
+        tie_break_rule: 'If integer values are equal, the candidate appearing earlier in the original input is ranked higher.',
+        candidates: items.map(x => ({ id: x.id, integer: x.value, original_position: x.originalIndex + 1 }))
+      };
+    }
+
+    async function callJev(state, questions) {
+      const key = els.apiKey.value.trim();
+      const endpoint = els.endpoint.value.trim();
+      if (!key) throw new Error('请先填写 TypeSafe API Key。');
+      if (!endpoint) throw new Error('API Endpoint 不能为空。');
+
+      const payload = { model: 'jev-latest', state, questions };
+      app.lastPayload = payload;
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), Math.max(5, Number(els.timeout.value) || 30) * 1000);
+      const start = performance.now();
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
+        const text = await response.text();
+        let data;
+        try { data = JSON.parse(text); } catch { data = { raw: text }; }
+        app.lastRaw = data;
+        if (!response.ok) {
+          const detail = data?.detail || data?.message || data?.error?.message || text || `HTTP ${response.status}`;
+          throw new Error(`API 返回 ${response.status}: ${typeof detail === 'string' ? detail : JSON.stringify(detail)}`);
+        }
+        return { data, ms: performance.now() - start };
+      } catch (error) {
+        if (error.name === 'AbortError') throw new Error('请求超时。TypeSafe 今天可能在思考人生。');
+        if (error instanceof TypeError && /fetch/i.test(error.message)) {
+          throw new Error('浏览器未能连接 API。部署到 Cloudflare Pages 时请确认 functions/api/jev.js 同时存在；本地预览请使用 wrangler pages dev。');
+        }
+        throw error;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    async function serialSort(items) {
+      const remaining = [...items];
+      const ordered = [];
+      const trace = [];
+      let totalMs = 0, inputTokens = 0, outputTokens = 0;
+
+      while (remaining.length) {
+        const rank = ordered.length + 1;
+        setStatus('busy', `串行实验：正在寻找第 ${rank} 大 · 剩余 ${remaining.length} 个候选`);
+        if (remaining.length === 1) {
+          ordered.push(remaining[0]);
+          trace.push({ rank, item: remaining[0], confidence: 1, ms: 0, local: true });
+          remaining.length = 0;
+          break;
+        }
+        const { data, ms } = await callJev(commonState(remaining), {
+          largest_remaining: {
+            type: 'choice',
+            instructions: 'Which candidate contains the numerically largest integer among all candidates in `state.candidates`? Apply `state.tie_break_rule` when values are equal. Return exactly one candidate id.',
+            criteria: criteriaFor(remaining)
+          }
+        });
+        const answer = data?.answers?.largest_remaining;
+        if (!answer || answer.type !== 'choice') throw new Error('响应里缺少 answers.largest_remaining choice。');
+        const index = remaining.findIndex(x => x.id === answer.choice);
+        if (index < 0) throw new Error(`Jev 返回了不存在的候选：${answer.choice}`);
+        const [picked] = remaining.splice(index, 1);
+        ordered.push(picked);
+        totalMs += ms;
+        inputTokens += data?.usage?.input_tokens || 0;
+        outputTokens += data?.usage?.output_tokens || 0;
+        trace.push({ rank, item: picked, confidence: answer.confidence, probabilities: answer.probabilities, ms });
+        renderProgress(ordered, exactOrder(items), trace, { mode: '串行选最大', calls: trace.filter(x => !x.local).length, totalMs, inputTokens, outputTokens });
+      }
+      return { ordered, trace, stats: { mode: '串行选最大', calls: Math.max(0, items.length - 1), totalMs, inputTokens, outputTokens } };
+    }
+
+    async function parallelSort(items) {
+      setStatus('busy', `并行实验：一次性询问 ${items.length} 个名次`);
+      const criteria = criteriaFor(items);
+      const questions = Object.fromEntries(items.map((_, index) => {
+        const rank = index + 1;
+        return [`rank_${rank}`, {
+          type: 'choice',
+          instructions: `Which candidate is the ${ordinal(rank)} largest integer among all candidates in \`state.candidates\`? Rank larger numerical values first and apply \`state.tie_break_rule\` when values are equal. This question is independent; return exactly one candidate id.`,
+          criteria
+        }];
+      }));
+      const { data, ms } = await callJev(commonState(items), questions);
+      const byId = new Map(items.map(x => [x.id, x]));
+      const ordered = [];
+      const trace = [];
+      for (let rank = 1; rank <= items.length; rank++) {
+        const answer = data?.answers?.[`rank_${rank}`];
+        if (!answer || answer.type !== 'choice') throw new Error(`响应里缺少 rank_${rank} choice。`);
+        const item = byId.get(answer.choice);
+        if (!item) throw new Error(`Jev 在第 ${rank} 名返回了不存在的候选：${answer.choice}`);
+        ordered.push(item);
+        trace.push({ rank, item, confidence: answer.confidence, probabilities: answer.probabilities, ms });
+      }
+      return {
+        ordered, trace,
+        stats: { mode: '并行猜第 k 大', calls: 1, totalMs: ms, inputTokens: data?.usage?.input_tokens || 0, outputTokens: data?.usage?.output_tokens || 0, model: data?.model }
+      };
+    }
+
+    function evaluate(ordered, truth) {
+      const exact = ordered.filter((item, i) => item?.id === truth[i]?.id).length;
+      const ids = ordered.map(x => x?.id);
+      const duplicates = new Set(ids.filter((id, i) => ids.indexOf(id) !== i));
+      const missing = truth.filter(x => !ids.includes(x.id));
+      return { exact, duplicates, missing, perfect: exact === truth.length && duplicates.size === 0 };
+    }
+
+    function renderProgress(ordered, truth, trace, stats) {
+      renderResult({ ordered, trace, stats }, truth, true);
+    }
+
+    function renderResult(run, truth, partial = false) {
+      const evaluation = evaluate(run.ordered, truth);
+      const duplicateIds = evaluation.duplicates;
+      const numbers = run.ordered.map((item, i) => {
+        const confidence = run.trace[i]?.confidence;
+        const classes = ['num'];
+        if (!partial && item.id !== truth[i]?.id) classes.push('bad');
+        if (duplicateIds.has(item.id)) classes.push('duplicate');
+        return `<div class="${classes.join(' ')}" style="animation-delay:${Math.min(i * 35, 350)}ms">
+          <div class="num-value">${item.value}</div>
+          <div class="num-meta">#${i + 1} · ${confidence == null ? '—' : `${Math.round(confidence * 100)}%`}</div>
+        </div>`;
+      }).join('');
+
+      const accuracy = truth.length ? Math.round(evaluation.exact / truth.length * 100) : 0;
+      const traceHtml = run.trace.map(t => `<div class="trace-line">
+        <span class="trace-rank">#${t.rank}</span>
+        <span>${t.item.value} <span style="color:#686775">(${t.item.id})</span>${t.local ? ' · 最后一项直接归位' : ''}</span>
+        <span class="trace-confidence">${Math.round((t.confidence ?? 0) * 100)}%</span>
+      </div>`).join('');
+
+      els.result.innerHTML = `
+        <div class="result-head">
+          <div class="result-title">${escapeHtml(run.stats.mode)}${partial ? ' · 运行中' : ''}</div>
+          <div class="score">${partial ? `${run.ordered.length}/${truth.length}` : evaluation.perfect ? 'PERFECT SORT' : `${accuracy}% POSITION ACC.`}</div>
+        </div>
+        <div class="numbers">${numbers || '<span style="color:var(--muted)">等待第一个答案…</span>'}</div>
+        <div class="metrics">
+          <div class="metric"><b>${run.stats.calls}</b><span>API calls</span></div>
+          <div class="metric"><b>${formatMs(run.stats.totalMs)}</b><span>network time</span></div>
+          <div class="metric"><b>${run.stats.inputTokens}</b><span>input tokens</span></div>
+          <div class="metric"><b>${run.stats.outputTokens}</b><span>output tokens</span></div>
+        </div>
+        ${!partial && (evaluation.duplicates.size || evaluation.missing.length) ? `<div class="error-box" style="margin-top:15px"><b>并行宇宙发生冲突</b><p>${evaluation.duplicates.size ? `重复选择：${[...evaluation.duplicates].join(', ')}。` : ''}${evaluation.missing.length ? `\n漏掉候选：${evaluation.missing.map(x => `${x.value} (${x.id})`).join(', ')}。` : ''}</p></div>` : ''}
+        <div class="trace">${traceHtml}</div>
+        <details>
+          <summary>查看最后一次请求与原始响应</summary>
+          <pre>${escapeHtml(JSON.stringify({ request: redactPayload(app.lastPayload), response: app.lastRaw }, null, 2))}</pre>
+        </details>`;
+    }
+
+    function renderError(error) {
+      els.result.innerHTML = `<div class="error-box"><b>实验没有完成</b><p>${escapeHtml(error.message || String(error))}</p></div>
+        <details open><summary>最后一次请求（不含 API Key）</summary><pre>${escapeHtml(JSON.stringify(redactPayload(app.lastPayload), null, 2))}</pre></details>`;
+    }
+
+    function redactPayload(payload) { return payload ? structuredClone(payload) : null; }
+    function formatMs(ms) { return ms < 1000 ? `${Math.round(ms)}ms` : `${(ms / 1000).toFixed(2)}s`; }
+    function escapeHtml(value) { return String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'})[c]); }
+    function setStatus(kind, text) { els.status.dataset.kind = kind; els.statusText.textContent = text; }
+
+    function setRunning(value) {
+      app.running = value;
+      els.runSerial.disabled = value;
+      els.runParallel.disabled = value;
+      els.numbers.disabled = value;
+    }
+
+    async function run(mode) {
+      if (app.running) return;
+      app.lastPayload = null; app.lastRaw = null;
+      try {
+        const items = parseNumbers();
+        const truth = exactOrder(items);
+        setRunning(true);
+        const result = mode === 'serial' ? await serialSort(items) : await parallelSort(items);
+        renderResult(result, truth);
+        const e = evaluate(result.ordered, truth);
+        setStatus(e.perfect ? 'ok' : 'error', e.perfect ? `${result.stats.mode} 完成：Jev 居然真的排对了。` : `${result.stats.mode} 完成：排序出现冲突，这才是我们来看的。`);
+      } catch (error) {
+        console.error(error);
+        renderError(error);
+        setStatus('error', '实验中止');
+      } finally {
+        setRunning(false);
+      }
+    }
+
+    function refreshCounter() {
+      const count = els.numbers.value.trim() ? els.numbers.value.trim().split(/[\s,，;；]+/).filter(Boolean).length : 0;
+      els.counter.textContent = `${count} / 20`;
+      els.counter.style.color = count > 20 ? 'var(--pink)' : '';
+    }
+
+    const samples = {
+      random: () => Array.from({length: 12}, () => Math.floor(Math.random() * 2001) - 1000),
+      reverse: () => [-99, -10, -2, 0, 1, 7, 12, 87, 501, 9000],
+      duplicates: () => [7, 7, -1, 42, 42, 42, 0, -1, 999, 7],
+      edge: () => [-1000000, 1000000, 0, -999999, 999999, -1, 1]
+    };
+
+    els.runSerial.addEventListener('click', () => run('serial'));
+    els.runParallel.addEventListener('click', () => run('parallel'));
+    els.numbers.addEventListener('input', refreshCounter);
+    els.toggleKey.addEventListener('click', () => {
+      els.apiKey.type = els.apiKey.type === 'password' ? 'text' : 'password';
+      els.toggleKey.textContent = els.apiKey.type === 'password' ? '◉' : '◎';
+    });
+    document.querySelectorAll('[data-sample]').forEach(button => button.addEventListener('click', () => {
+      els.numbers.value = samples[button.dataset.sample]().join(', ');
+      refreshCounter();
+    }));
+    refreshCounter();
+  </script>
+</body>
+</html>
