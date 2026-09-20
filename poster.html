@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JevSort Poster</title>
+<style>
+  *{box-sizing:border-box} html,body{margin:0;width:1242px;height:1656px;overflow:hidden}
+  body{font-family:"Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei",Arial,sans-serif;background:#f5f3ff;color:#17131f}
+  .poster{position:relative;width:1242px;height:1656px;padding:72px 72px 58px;background:
+    radial-gradient(circle at 8% 0%,rgba(167,139,250,.42),transparent 33%),
+    radial-gradient(circle at 100% 29%,rgba(103,232,249,.32),transparent 31%),
+    linear-gradient(155deg,#fbfaff 0%,#f4f1ff 58%,#eefcff 100%)}
+  .poster:before{content:"";position:absolute;inset:0;opacity:.35;background-image:linear-gradient(rgba(64,45,103,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(64,45,103,.08) 1px,transparent 1px);background-size:42px 42px;mask-image:linear-gradient(to bottom,#000,transparent 84%)}
+  .content{position:relative;z-index:1;height:100%;display:flex;flex-direction:column}
+  .topline{display:flex;justify-content:space-between;align-items:center;color:#7047d7;font:700 17px/1 Arial,sans-serif;letter-spacing:.18em;text-transform:uppercase}
+  .issue{color:#8b8499;letter-spacing:.08em}
+  h1{font:850 112px/.87 Arial,sans-serif;letter-spacing:-.075em;margin:58px 0 0;background:linear-gradient(110deg,#17131f 8%,#7c3aed 48%,#0891b2 92%);color:transparent;background-clip:text;-webkit-background-clip:text}
+  .zh-title{margin-top:20px;font-size:31px;font-weight:700;letter-spacing:.02em;color:#30283e}
+  .intro{margin:27px 0 0;max-width:880px;color:#655d72;font-size:22px;line-height:1.6}
+  .intro strong{color:#241b35;font-weight:760}
+  .claim{align-self:flex-start;margin-top:30px;padding:14px 21px;border:1px solid rgba(109,40,217,.24);border-radius:999px;background:rgba(124,58,237,.09);color:#6d28d9;font:800 18px/1 Arial,sans-serif;letter-spacing:.08em}
+  .panel{margin-top:42px;border:1px solid rgba(73,52,105,.14);border-radius:28px;background:rgba(255,255,255,.76);box-shadow:0 32px 100px rgba(78,55,116,.14);overflow:hidden;backdrop-filter:blur(20px)}
+  .panel-head{display:grid;grid-template-columns:1.1fr .9fr .9fr;align-items:end;padding:25px 30px 20px;border-bottom:1px solid rgba(73,52,105,.12);background:rgba(124,58,237,.035)}
+  .panel-head .metric{font-size:16px;color:#8a8295;letter-spacing:.09em;text-transform:uppercase}
+  .algo{font:800 24px/1 Arial,sans-serif;letter-spacing:-.02em}.jev{color:#7c3aed}.quick{color:#8b8492}
+  .row{display:grid;grid-template-columns:1.1fr .9fr .9fr;min-height:70px;align-items:center;padding:0 30px;border-bottom:1px solid rgba(73,52,105,.085)}
+  .row:last-child{border-bottom:0}.label{font-size:18px;color:#625a6e}.label em{font-style:normal;color:#918a9b;font-size:14px;margin-left:7px}
+  .value{font:750 19px/1.2 Arial,"Noto Sans CJK SC",sans-serif}.value.good{color:#241b35}.value.best{color:#6d28d9}.value.old{color:#aaa4b0}
+  .ai-bar{display:flex;align-items:center;gap:10px}.track{width:98px;height:9px;border-radius:99px;background:#e3deeb;overflow:hidden}.fill{display:block;height:100%;width:100%;background:linear-gradient(90deg,#8b5cf6,#22d3ee);border-radius:99px}.fill.zero{width:0}
+  .quote{margin-top:39px;display:flex;justify-content:space-between;gap:30px;align-items:center}
+  .quote-main{font:800 34px/1.18 Arial,sans-serif;letter-spacing:-.035em;color:#20182d}.quote-main span{display:block;color:#756d80;margin-top:8px}
+  .stamp{flex:none;width:178px;height:178px;border:1px solid rgba(8,145,178,.28);border-radius:50%;display:grid;place-content:center;text-align:center;transform:rotate(-7deg);background:rgba(34,211,238,.08);box-shadow:inset 0 0 40px rgba(34,211,238,.08)}
+  .stamp b{font:900 42px/.9 Arial,sans-serif;color:#0891b2}.stamp small{display:block;margin-top:11px;font:700 12px/1.3 Arial,sans-serif;letter-spacing:.14em;color:#6d6876}
+  .bottom{margin-top:auto;display:grid;grid-template-columns:1fr auto;gap:30px;align-items:end;padding-top:24px;border-top:1px solid rgba(73,52,105,.16)}
+  .notes{max-width:790px;color:#8b8495;font-size:13px;line-height:1.55}.notes strong{color:#5f566b}
+  .url{text-align:right;color:#2c2438;font:750 16px/1.3 Arial,sans-serif}.url span{display:block;margin-top:7px;color:#8b8495;font-size:12px;letter-spacing:.1em}
+</style>
+</head>
+<body>
+<main class="poster">
+  <div class="content">
+    <div class="topline"><span>JEV-NATIVE RESEARCH</span><span class="issue">2026 / 001</span></div>
+    <h1>Introducing<br>JevSort</h1>
+    <div class="zh-title">我们的第一个 Jev-native 应用</div>
+    <p class="intro">为 <strong>post-comparison era</strong> 设计的新一代排序算法。QuickSort 逐个比较元素；JevSort 直接询问万物应处的位置。</p>
+    <div class="claim">67 YEARS MORE ADVANCED</div>
+
+    <section class="panel">
+      <div class="panel-head"><div class="metric">THE ONLY METRICS THAT MATTER</div><div class="algo jev">JevSort</div><div class="algo quick">QuickSort</div></div>
+      <div class="row"><div class="label">提出年份</div><div class="value best">2026</div><div class="value old">1959</div></div>
+      <div class="row"><div class="label">时代领先</div><div class="value best">+67 years</div><div class="value old">Baseline</div></div>
+      <div class="row"><div class="label">串行决策轮次</div><div class="value best">O(n)</div><div class="value old">O(n log n) comparisons</div></div>
+      <div class="row"><div class="label">并行轮次 <em>充分并行时</em></div><div class="value best">O(1)*</div><div class="value old">Difficult</div></div>
+      <div class="row"><div class="label">Native parallel decisions</div><div class="value good">YES</div><div class="value old">NO</div></div>
+      <div class="row"><div class="label">Calibrated confidence</div><div class="value good">YES</div><div class="value old">NO</div></div>
+      <div class="row"><div class="label">AI Native 指数</div><div class="value ai-bar"><span class="track"><span class="fill"></span></span><span>100%</span></div><div class="value ai-bar old"><span class="track"><span class="fill zero"></span></span><span>0%</span></div></div>
+      <div class="row"><div class="label">GPU compatible</div><div class="value good">Obviously</div><div class="value old">Emotionally CPU-bound</div></div>
+    </section>
+
+    <section class="quote">
+      <div class="quote-main">QuickSort minimizes comparisons.<span>JevSort minimizes indecision.</span></div>
+      <div class="stamp"><b>O(1)*</b><small>SEQUENTIAL<br>WAITING</small></div>
+    </section>
+
+    <footer class="bottom">
+      <div class="notes"><strong>*</strong> QuickSort 于 1959 年构思、1961 年发表。<br><strong>*</strong> O(1) 指充分并行条件下的顺序 API round trips——JevSort 市场部门唯一认可的复杂度指标。</div>
+      <div class="url">v-sort.feinianyu.com<span>BUILT WITH JEV · SORTED WITH VIBES</span></div>
+    </footer>
+  </div>
+</main>
+</body>
+</html>
